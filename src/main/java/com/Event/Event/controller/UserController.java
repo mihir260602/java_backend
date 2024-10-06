@@ -1,5 +1,6 @@
 package com.Event.Event.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,8 +43,42 @@ public class UserController {
         return ResponseEntity.ok("User registered successfully");
     }
 
+    // @PostMapping("/login")
+    // public ResponseEntity<String> loginUser(@RequestBody User user) {
+    // Optional<User> foundUser;
+
+    // // Check if the user is an admin first
+    // if (user.getPassword() == null || user.getPassword().isEmpty()) {
+    // foundUser = userService.findByUsername(user.getUsername());
+    // System.out.println("Found user: " + user.getUsername() + " with roles: " +
+    // user.getRoles());
+
+    // if (foundUser.isPresent() && foundUser.get().getRoles().equals("ADMIN")) {
+    // // Generate token for admin without password check
+    // String token = jwtUtils.generateToken(foundUser.get().getUsername());
+    // System.out.println("Admin login without password successful for user: " +
+    // user.getUsername());
+
+    // return ResponseEntity.ok(token);
+    // } else {
+    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid
+    // credentials");
+    // }
+    // } else {
+    // // Regular login flow for users with a password
+    // foundUser = userService.loginUser(user.getUsername(), user.getPassword());
+    // if (foundUser.isPresent()) {
+    // String token = jwtUtils.generateToken(foundUser.get().getUsername());
+    // return ResponseEntity.ok(token);
+    // } else {
+    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid
+    // credentials");
+    // }
+    // }
+    // }
+
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestBody User user) {
+    public ResponseEntity<Map<String, String>> loginUser(@RequestBody User user) {
         Optional<User> foundUser;
 
         // Check if the user is an admin first
@@ -56,18 +91,26 @@ public class UserController {
                 String token = jwtUtils.generateToken(foundUser.get().getUsername());
                 System.out.println("Admin login without password successful for user: " + user.getUsername());
 
-                return ResponseEntity.ok(token);
+                Map<String, String> response = new HashMap<>();
+                response.put("token", token);
+                response.put("role", "ADMIN");
+                return ResponseEntity.ok(response);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
         } else {
             // Regular login flow for users with a password
             foundUser = userService.loginUser(user.getUsername(), user.getPassword());
             if (foundUser.isPresent()) {
                 String token = jwtUtils.generateToken(foundUser.get().getUsername());
-                return ResponseEntity.ok(token);
+                String role = foundUser.get().getRoles(); // Get the user's role
+
+                Map<String, String> response = new HashMap<>();
+                response.put("token", token);
+                response.put("role", role);
+                return ResponseEntity.ok(response);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
         }
     }
@@ -114,7 +157,8 @@ public class UserController {
         userService.createPasswordResetTokenForUser(user, token);
 
         // Send email with the token
-        // String resetUrl = "http://localhost:8080/api/users/reset-password?token=" + token;
+        // String resetUrl = "http://localhost:8080/api/users/reset-password?token=" +
+        // token;
         String resetUrl = "http://localhost:5173/reset-password?token=" + token; // Use your frontend URL here
 
         mailService.sendPasswordResetEmail(user.getEmail(), resetUrl);
